@@ -164,7 +164,24 @@
   .s-final { flex-direction:column; justify-content:center; text-align:center; }
   .s-final h2 { font-family:var(--serif); font-weight:400; font-size:clamp(2.4rem,9vw,5.5rem); line-height:1.05; }
   .s-final h2 span { font-family:var(--script); color:var(--gold); display:block; font-size:1.5em; text-shadow:0 0 40px #f5d68a66; }
-  .s-final p { color:var(--muted); margin-top:20px; font-size:1.05rem; }
+  .s-final { overflow:hidden; }
+  .s-final h2 b { font-weight:400; }
+  .s-final h2 .heart { font-style:normal; font-size:.45em; vertical-align:middle; }
+  .final-eyebrow { font-size:.6rem; letter-spacing:.28em; white-space:nowrap; margin-bottom:10px; }
+  .avatar-stage { position:relative; width:min(66vw,320px); margin:28px auto 10px; }
+  #finalPhoto { width:100%; display:block; border-radius:24px; border:1px solid #f5d68a66;
+                box-shadow:0 0 0 6px #f5d68a14, 0 0 60px #ff8fab55, 0 30px 70px #000c; animation:floaty 5s ease-in-out infinite; }
+  #finalPhoto:not([src]) { display:none; }
+  @keyframes floaty { 50% { transform:translateY(-10px) rotate(-1deg); } }
+  #bubbles { position:absolute; inset:-30% -25%; pointer-events:none; }
+  .bubble { position:absolute; width:46px; height:46px; margin:-23px; border-radius:50%; display:grid; place-items:center; font-size:1.3rem;
+            background:radial-gradient(circle at 30% 28%, #ffffffaa 0 6%, #ffffff14 22%, #b9a4ff22 60%, #ff8fab44 100%);
+            border:1px solid #ffffff55; box-shadow:inset 0 0 12px #ffffff33, 0 0 16px #ff8fab44; }
+  .ily { font-family:var(--script); font-size:clamp(4.4rem,22vw,9rem); line-height:1.1; color:#ffc2d4; margin-top:10px;
+         text-shadow:0 0 24px #ff8fabcc, 0 0 70px #ff6f9188; white-space:nowrap; }
+  .ily .l { display:inline-block; }
+  .ily-sub { font-family:var(--serif); font-style:italic; font-size:clamp(1.3rem,5.4vw,1.9rem); color:var(--gold); margin-top:6px; }
+  .moon { display:inline-block; animation:floaty 3s ease-in-out infinite; }
 
   @media (max-width:760px) {
     .chapter, .chapter:nth-of-type(even) { flex-direction:column; justify-content:center; gap:5vh; }
@@ -308,9 +325,12 @@
     </div>
   </section>
   <section class="s-final">
-    <p class="eyebrow">Today, tomorrow, always</p>
-    <h2>Happy Birthday<span data-name></span></h2>
-    <p>I love you more than all the stars.</p>
+    <p class="eyebrow final-eyebrow">Today · Tomorrow · Always</p>
+    <h2>Happy Birthday<span><b data-name></b> <i class="heart">🤍</i></span></h2>
+    <div class="avatar-stage"><img id="finalPhoto" alt=""><div id="bubbles"></div></div>
+    <p class="ily" id="ily">I love you</p>
+    <p class="ily-sub">I love you 3000 ❤️</p>
+    <p class="ily-sub">to the moon and back <span class="moon">🌙</span></p>
     <button class="glow-btn" onclick="location.reload()">Watch again ↺</button>
   </section>
 </main>
@@ -318,6 +338,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
-<script type="module" src="app.js?v=6"></script>
+<script type="module" src="app.js?v=7"></script>
 </body>
 </html>

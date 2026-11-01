@@ -53,7 +53,7 @@ async function sealFile(path) {
   return sealed.get(path);
 }
 
-for (const item of [...C.memories, ...C.gallery]) {
+for (const item of [...C.memories, ...C.gallery, C.finale].filter(Boolean)) {
   item.type = MIME[extname(item.src).toLowerCase()] || 'image/jpeg';
   item.src = await sealFile(item.src);
 }

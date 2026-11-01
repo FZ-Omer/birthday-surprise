@@ -86,7 +86,10 @@ async function unlock() {
     const blobs = new Map();
     const blobUrl = (path, type) => blobs.get(path) || blobs.set(path,
       openFile(path, key).then(b => URL.createObjectURL(new Blob([b], { type })))).get(path);
-    await Promise.all([...config.memories, ...config.gallery].filter(m => m.src).map(async m => m.src = await blobUrl(m.src, m.type)));
+    const photos = [...config.memories, ...config.gallery, config.finale].filter(m => m?.src);
+    await Promise.all(photos.map(async m => m.src = await blobUrl(m.src, m.type)));
+    // decode up front so photos never paint half-loaded while scrolling on phones
+    await Promise.all(photos.map(m => Object.assign(new Image(), { src: m.src }).decode().catch(() => {})));
     if (config.music) config.music = await blobUrl(config.music, config.musicType);
     await gsap.to('#lock', { opacity: 0, duration: 1.2 });
     $('#lock').remove();
@@ -597,7 +600,7 @@ async function toStory() {
   show('#quote', false);
 }
 
-const imgTag = src => `<img src="${src}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
+const imgTag = src => `<img src="${src}" alt="" onerror="this.style.visibility='hidden'">`;
 function buildStory() {
   $('#chapters').innerHTML = C.memories.map((m, i) => `
     <section class="chapter">
@@ -636,8 +639,40 @@ function buildStory() {
   ScrollTrigger.create({ trigger: '.s-letter', start: 'top 60%', once: true, onEnter: typeLetter });
   gsap.from('.paper', { y: 120, rotate: -6, opacity: 0, duration: 1.4, ease: 'power3.out', scrollTrigger: { trigger: '.s-letter', start: 'top 75%' } });
 
-  gsap.from('.s-final > *', { opacity: 0, y: 50, stagger: 0.3, duration: 1.4, ease: 'power3.out',
-    scrollTrigger: { trigger: '.s-final', start: 'top 60%', onEnter: () => fireworks(6000) } });
+  if (C.finale?.src) $('#finalPhoto').src = C.finale.src;
+  const ily = $('#ily');
+  ily.innerHTML = [...ily.textContent].map(c => `<span class="l">${c === ' ' ? '&nbsp;' : c}</span>`).join('');
+  gsap.set(['.s-final > *', '#ily .l'], { opacity: 0 });
+  ScrollTrigger.create({ trigger: '.s-final', start: 'top 60%', once: true, onEnter: () => {
+    gsap.timeline()
+      .fromTo('.final-eyebrow, .s-final h2', { y: 40 }, { opacity: 1, y: 0, stagger: 0.3, duration: 1.4, ease: 'power3.out' })
+      .fromTo('.avatar-stage', { scale: 0.6, filter: 'blur(14px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 1.6, ease: 'back.out(1.6)',
+        onStart: () => setInterval(bubble, 380) }, '-=0.6')
+      .set('#ily', { opacity: 1 })
+      // slow-mo: each letter drifts in from big and blurred
+      .fromTo('#ily .l', { scale: 3, y: 40, filter: 'blur(18px)' }, { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)', duration: 2.4, stagger: 0.2, ease: 'expo.out',
+        onComplete: () => { fireworks(6000); gsap.to('#ily', { scale: 1.06, duration: 0.5, yoyo: true, repeat: -1, ease: 'sine.inOut' }); } }, '+=0.3')
+      .fromTo('.ily-sub', { y: 30 }, { opacity: 1, y: 0, stagger: 0.9, duration: 1.2, ease: 'power3.out' }, '-=0.8')
+      .to('.s-final .glow-btn', { opacity: 1, duration: 1 });
+  } });
+}
+
+// a little character in a soap bubble pops up around the avatar picture, floats, and bursts
+function bubble() {
+  const r = $('#bubbles').getBoundingClientRect();
+  if (r.bottom < 0 || r.top > innerHeight) return; // off screen
+
+  const b = document.createElement('span');
+  b.className = 'bubble';
+  b.textContent = ['🧕', '💖', '✨', '🧸', '🌸', '🤍', '⭐', '🫧', '🍅', '😴'][Math.floor(rand(0, 10))];
+  const side = Math.random() < 0.5; // hug the left or right edge, anywhere top to bottom
+  b.style.left = `${side ? rand(0, 22) : rand(78, 100)}%`;
+  b.style.top = `${rand(10, 95)}%`;
+  $('#bubbles').append(b);
+  gsap.timeline({ onComplete: () => b.remove() })
+    .fromTo(b, { scale: 0 }, { scale: rand(0.7, 1.15), duration: 0.5, ease: 'back.out(3)' })
+    .to(b, { y: -rand(50, 110), x: rand(-25, 25), duration: rand(1.6, 2.6), ease: 'sine.inOut' }, '<')
+    .to(b, { scale: 1.6, opacity: 0, duration: 0.22, ease: 'power2.out' });
 }
 
 function typeLetter() {
