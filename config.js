@@ -9,7 +9,7 @@ window.CONFIG = {
   // one secret per star she has to find in the sky
   reasons: [
     "Your smile fixes my worst days.",
-    "You laugh at my jokes, even the bad ones.",
+    "Nobody loves without expecting something back. Nobody except you.",
     "You make every place feel like home.",
     "You believe in me more than I do.",
     "Your heart is the kindest I've ever known.",
