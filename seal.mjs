@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { extname } from 'node:path';
 import vm from 'node:vm';
+import { normalize } from './answer.js';
 
 const ITERATIONS = 600000;
 const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4' };
@@ -20,8 +21,6 @@ function ask(q) {
     rl._writeToOutput = () => {}; // hide what is typed
   });
 }
-// must match normalize() in app.js
-const normalize = s => s.normalize('NFC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 
 let answer = process.env.SEAL_ANSWER;
 if (!answer) {

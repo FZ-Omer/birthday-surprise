@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { normalize } from './answer.js';
 
 const $ = s => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -8,8 +9,6 @@ const BLOW_THRESHOLD = 0.15; // mic loudness (0–1) that counts as a blow; rais
 gsap.registerPlugin(ScrollTrigger);
 
 /* ---------- lock screen: everything personal is AES-encrypted in vault/ (see seal.mjs) ---------- */
-// must match normalize() in seal.mjs
-const normalize = s => s.normalize('NFC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 async function openFile(path, key) {
   const buf = new Uint8Array(await (await fetch(path)).arrayBuffer());
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, key, buf.slice(12));
@@ -52,12 +51,63 @@ document.querySelectorAll('[data-name]').forEach(e => e.textContent = C.name);
 document.querySelectorAll('[data-nick]').forEach((e, i) => e.textContent = C.nicknames[i % C.nicknames.length]);
 
 /* ---------- music ---------- */
+// with no music file, an original music-box lullaby (no copyright) is played live: F–G–Em–Am, two phrases
+const CHORDS = [[53, 57, 60], [55, 59, 62], [52, 55, 59], [57, 60, 64]];
+const TUNE = [ // [midi note, beats] for each bar
+  [[77, 1.5], [76, .5], [72, 2]], [[74, 1.5], [72, .5], [71, 1], [67, 1]], [[71, 1.5], [72, .5], [74, 1], [76, 1]], [[76, 1], [72, 1], [69, 2]],
+  [[81, 1.5], [79, .5], [77, 1], [76, 1]], [[74, 1], [76, 1], [79, 2]], [[76, 1.5], [74, .5], [71, 2]], [[69, 4]],
+];
+function musicBox() {
+  const ac = new AudioContext(), out = ac.createGain(), verb = ac.createConvolver(), wet = ac.createGain();
+  verb.buffer = ac.createBuffer(2, ac.sampleRate * 3, ac.sampleRate);
+  for (let c = 0; c < 2; c++) verb.buffer.getChannelData(c).forEach((_, i, d) => d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 4);
+  wet.gain.value = 0.6;
+  out.connect(ac.destination);
+  out.connect(verb).connect(wet).connect(ac.destination);
+  const note = (midi, t, vol, len) => {
+    const g = ac.createGain(), f = 440 * 2 ** ((midi - 69) / 12);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    g.connect(out);
+    for (const [mult, amp] of [[1, 1], [4, 0.12]]) { // the faint 4th harmonic gives the bell-like tine
+      const o = ac.createOscillator(), a = ac.createGain();
+      o.frequency.value = f * mult;
+      a.gain.value = amp;
+      o.connect(a).connect(g);
+      o.start(t);
+      o.stop(t + len);
+    }
+  };
+  const beat = 60 / 68;
+  let bar = 0, next = ac.currentTime + 0.3;
+  setInterval(() => {
+    while (next < ac.currentTime + 1.5) {
+      const chord = CHORDS[bar % 4], ext = [...chord, ...chord.map(n => n + 12)];
+      note(chord[0] - 12, next, 0.14, beat * 4);
+      [0, 2, 3, 4, 5, 4, 3, 2].forEach((k, i) => note(ext[k], next + i * beat / 2, 0.05, 1.8));
+      let t = next;
+      for (const [m, b] of TUNE[bar % TUNE.length]) { note(m, t, 0.2, b * beat + 1.4); t += b * beat; }
+      next += 4 * beat;
+      bar++;
+    }
+  }, 300);
+  out.gain.setValueAtTime(0, ac.currentTime);
+  out.gain.linearRampToValueAtTime(0.8, ac.currentTime + 4);
+  return ac;
+}
+
 const music = $('#music'), musicBtn = $('#musicBtn');
+let box;
 if (C.music) music.src = C.music;
 music.onerror = () => musicBtn.classList.add('hidden');
-musicBtn.onclick = () => music.paused ? music.play() : music.pause();
+musicBtn.onclick = () => box ? (box.state === 'running' ? box.suspend() : box.resume()) : music.paused ? music.play() : music.pause();
 function startMusic() {
-  if (!C.music) return;
+  if (!C.music) {
+    box = musicBox();
+    musicBtn.classList.remove('hidden');
+    return;
+  }
   music.volume = 0;
   music.play().then(() => {
     musicBtn.classList.remove('hidden');
@@ -514,6 +564,7 @@ function buildStory() {
   const gallery = C.gallery.length ? C.gallery : C.memories;
   $('#track').innerHTML = gallery.map(m => `<figure class="polaroid">${imgTag(m.src)}<span>${m.title || ''}</span></figure>`).join('');
   $('#sign').textContent = C.from;
+  if (C.storyTitle) $('#storyTitle').innerHTML = C.storyTitle;
 
   gsap.from('.s-hero > *', { opacity: 0, y: 40, stagger: 0.25, duration: 1.4, ease: 'power3.out', delay: 0.6 });
 
