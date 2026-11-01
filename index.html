@@ -123,7 +123,8 @@
   .chapter:nth-of-type(even) { flex-direction:row-reverse; }
   .ch-media { flex:1.15; aspect-ratio:4/5; max-height:80vh; overflow:hidden; border-radius:6px; position:relative;
               clip-path:inset(100% 0 0 0); box-shadow:0 30px 80px #000c; background:linear-gradient(135deg,#3a1f4f,#7a3a63 50%,#d98a8f); }
-  .ch-media img { width:100%; height:100%; object-fit:cover; transform:scale(1.35); display:block;
+  /* will-change: zooming a pre-rastered layer instead of re-painting it every frame, which left photos half-drawn on phones */
+  .ch-media img { width:100%; height:100%; object-fit:cover; transform:scale(1.35); display:block; will-change:transform;
                   background:linear-gradient(135deg,#3a1f4f,#7a3a63 50%,#d98a8f); }
   .stamp { position:absolute; right:14px; bottom:14px; width:96px; height:96px; border-radius:50%; display:grid; place-content:center;
            text-align:center; border:2px dashed #f5d68acc; outline:2px solid #f5d68a55; outline-offset:4px; background:#14081fb3;
@@ -164,12 +165,12 @@
   .s-final { flex-direction:column; justify-content:center; text-align:center; }
   .s-final h2 { font-family:var(--serif); font-weight:400; font-size:clamp(2.4rem,9vw,5.5rem); line-height:1.05; }
   .s-final h2 span { font-family:var(--script); color:var(--gold); display:block; font-size:1.5em; text-shadow:0 0 40px #f5d68a66; }
-  .s-final { overflow:hidden; }
+  #story .s-final { overflow:hidden; padding-block:6vh; }
   .s-final h2 b { font-weight:400; }
   .s-final h2 .heart { font-style:normal; font-size:.45em; vertical-align:middle; }
   .final-eyebrow { font-size:.6rem; letter-spacing:.28em; white-space:nowrap; margin-bottom:10px; }
-  .avatar-stage { position:relative; width:min(66vw,320px); margin:28px auto 10px; }
-  #finalPhoto { width:100%; display:block; border-radius:24px; border:1px solid #f5d68a66;
+  .avatar-stage { position:relative; width:fit-content; margin:28px auto 10px; }
+  #finalPhoto { max-width:min(66vw,320px); max-height:36vh; display:block; border-radius:24px; border:1px solid #f5d68a66;
                 box-shadow:0 0 0 6px #f5d68a14, 0 0 60px #ff8fab55, 0 30px 70px #000c; animation:floaty 5s ease-in-out infinite; }
   #finalPhoto:not([src]) { display:none; }
   @keyframes floaty { 50% { transform:translateY(-10px) rotate(-1deg); } }
