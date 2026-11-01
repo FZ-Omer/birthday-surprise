@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 
-const C = window.CONFIG;
 const $ = s => document.querySelector(s);
 const rand = (a, b) => a + Math.random() * (b - a);
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -8,8 +7,49 @@ const isMobile = matchMedia('(max-width: 760px)').matches;
 const BLOW_THRESHOLD = 0.15; // mic loudness (0–1) that counts as a blow; raise if candles go out on their own
 gsap.registerPlugin(ScrollTrigger);
 
+/* ---------- lock screen: everything personal is AES-encrypted in vault/ (see seal.mjs) ---------- */
+// must match normalize() in seal.mjs
+const normalize = s => s.normalize('NFC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+async function openFile(path, key) {
+  const buf = new Uint8Array(await (await fetch(path)).arrayBuffer());
+  return crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, key, buf.slice(12));
+}
+async function unlock() {
+  const lock = await (await fetch('vault/lock.json')).json();
+  $('#lockQ').textContent = lock.question;
+  $('#lockHint').textContent = lock.hint || '';
+  gsap.from('#lock .lock-card > *', { opacity: 0, y: 20, stagger: 0.15, duration: 1, ease: 'power3.out' });
+  const salt = Uint8Array.from(atob(lock.salt), c => c.charCodeAt(0));
+  for (;;) {
+    const answer = await new Promise(r => $('#lockForm').onsubmit = e => { e.preventDefault(); r($('#lockInput').value); });
+    $('#lockBtn').textContent = 'Checking…';
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(normalize(answer)), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: lock.iterations, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    let config;
+    try { config = JSON.parse(new TextDecoder().decode(await openFile('vault/config.bin', key))); }
+    catch {
+      $('#lockBtn').textContent = 'Unlock';
+      $('#lockInput').value = '';
+      gsap.fromTo('.lock-card', { x: -12 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' });
+      $('#lockHint').textContent = 'Not quite… try again 💭';
+      continue;
+    }
+    $('#lockBtn').textContent = 'Opening our memories…';
+    const blobs = new Map();
+    const blobUrl = (path, type) => blobs.get(path) || blobs.set(path,
+      openFile(path, key).then(b => URL.createObjectURL(new Blob([b], { type })))).get(path);
+    await Promise.all([...config.memories, ...config.gallery].filter(m => m.src).map(async m => m.src = await blobUrl(m.src, m.type)));
+    if (config.music) config.music = await blobUrl(config.music, config.musicType);
+    await gsap.to('#lock', { opacity: 0, duration: 1.2 });
+    $('#lock').remove();
+    return config;
+  }
+}
+const C = await unlock();
+
 document.querySelectorAll('[data-name]').forEach(e => e.textContent = C.name);
-document.querySelectorAll('[data-nick]').forEach(e => e.textContent = C.nickname);
+document.querySelectorAll('[data-nick]').forEach((e, i) => e.textContent = C.nicknames[i % C.nicknames.length]);
 
 /* ---------- music ---------- */
 const music = $('#music'), musicBtn = $('#musicBtn');
@@ -426,7 +466,7 @@ async function celebrate() {
   state = 'party';
   gsap.to('#micBtn', { opacity: 0, duration: 0.4 });
   $('#cakeHint').textContent = 'your wish is on its way to the stars ✨';
-  $('#cakeTitle').textContent = `Happy Birthday, ${C.nickname}!`;
+  $('#cakeTitle').textContent = `Happy Birthday, ${C.nicknames.at(-1)}!`;
   gsap.fromTo('#cakeTitle', { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, ease: 'back.out(2)' });
   fireworks(7000);
   gsap.to(sky, { speed: 0.6, duration: 2 });
