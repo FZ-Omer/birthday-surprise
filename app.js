@@ -13,9 +13,55 @@ async function openFile(path, key) {
   const buf = new Uint8Array(await (await fetch(path)).arrayBuffer());
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, key, buf.slice(12));
 }
+// twinkling stars, a shooting star now and then, and floating hearts behind the lock card; stops once #lock is removed
+function lockAmbience() {
+  const cv = $('#lockStars'), ctx = cv.getContext('2d'), dpr = Math.min(devicePixelRatio, 2);
+  const size = () => { cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; };
+  size();
+  addEventListener('resize', size);
+  const stars = Array.from({ length: 160 }, () => ({ x: Math.random(), y: Math.random(), r: rand(0.3, 1.4), p: rand(0, 6) }));
+  let shoot = null;
+  (function draw(t) {
+    if (!cv.isConnected) return removeEventListener('resize', size);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = '#fff';
+    for (const s of stars) {
+      ctx.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(t / 900 + s.p));
+      ctx.beginPath();
+      ctx.arc(s.x * cv.width, s.y * cv.height, s.r * dpr, 0, 7);
+      ctx.fill();
+    }
+    if (!shoot && Math.random() < 0.006) shoot = { x: rand(0.1, 0.8) * cv.width, y: rand(0, 0.4) * cv.height, life: 1 };
+    if (shoot) {
+      const k = 1 - shoot.life, x = shoot.x + k * 420 * dpr, y = shoot.y + k * 210 * dpr, len = 150 * dpr;
+      const g = ctx.createLinearGradient(x, y, x - len, y - len / 2);
+      g.addColorStop(0, '#fff');
+      g.addColorStop(1, 'transparent');
+      ctx.globalAlpha = shoot.life;
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - len, y - len / 2);
+      ctx.stroke();
+      if ((shoot.life -= 0.02) <= 0) shoot = null;
+    }
+    requestAnimationFrame(draw);
+  })(0);
+  for (let i = 0; i < 16; i++) {
+    const f = document.createElement('span');
+    f.className = 'floater';
+    f.textContent = ['💖', '✨', '💗', '🌸', '💫', '🎈'][i % 6];
+    f.style.cssText = `left:${rand(0, 95)}%;font-size:${rand(14, 28)}px;animation-duration:${rand(9, 18)}s;animation-delay:${-rand(0, 18)}s;--dx:${rand(-60, 60)}px;--r:${rand(-40, 40)}deg`;
+    $('#lock').insertBefore(f, $('#lockForm'));
+  }
+}
+
 async function unlock() {
+  lockAmbience();
   const lock = await (await fetch('vault/lock.json')).json();
   $('#lockQ').textContent = lock.question;
+  $('#lockNote').textContent = lock.note || '';
   $('#lockHint').textContent = lock.hint || '';
   gsap.from('#lock .lock-card > *', { opacity: 0, y: 20, stagger: 0.15, duration: 1, ease: 'power3.out' });
   const salt = Uint8Array.from(atob(lock.salt), c => c.charCodeAt(0));
@@ -35,6 +81,8 @@ async function unlock() {
       continue;
     }
     $('#lockBtn').textContent = 'Opening our memories…';
+    $('#lockIcon').textContent = '🔓';
+    gsap.fromTo('#lockIcon', { scale: 1.6 }, { scale: 1, duration: 0.7, ease: 'back.out(3)' });
     const blobs = new Map();
     const blobUrl = (path, type) => blobs.get(path) || blobs.set(path,
       openFile(path, key).then(b => URL.createObjectURL(new Blob([b], { type })))).get(path);
@@ -553,7 +601,9 @@ const imgTag = src => `<img src="${src}" alt="" loading="lazy" onerror="this.sty
 function buildStory() {
   $('#chapters').innerHTML = C.memories.map((m, i) => `
     <section class="chapter">
-      <div class="ch-media">${imgTag(m.src)}</div>
+      <div class="ch-media">${imgTag(m.src)}
+        ${m.stamp ? `<div class="stamp"><b>${m.stamp.split(' ')[0]}</b><small>${m.stamp.split(' ').slice(1).join(' ')}</small></div>` : ''}
+        ${m.zzz ? '<div class="zzz"><i>z</i><i>z</i><i>Z</i></div>' : ''}</div>
       <div class="ch-text">
         <span class="ch-num">${String(i + 1).padStart(2, '0')}</span>
         <p class="ch-date reveal">${m.date}</p>
@@ -572,6 +622,8 @@ function buildStory() {
     const media = ch.querySelector('.ch-media');
     gsap.to(media, { clipPath: 'inset(0% 0 0 0)', ease: 'none', scrollTrigger: { trigger: ch, start: 'top 85%', end: 'top 25%', scrub: 1 } });
     gsap.to(media.querySelector('img'), { scale: 1, ease: 'none', scrollTrigger: { trigger: ch, start: 'top bottom', end: 'bottom top', scrub: 1 } });
+    const stamp = ch.querySelector('.stamp');
+    if (stamp) gsap.from(stamp, { scale: 3, opacity: 0, rotate: 30, duration: 0.6, ease: 'back.out(2)', scrollTrigger: { trigger: ch, start: 'top 35%' } });
     gsap.from(ch.querySelector('.ch-num'), { y: 120, ease: 'none', scrollTrigger: { trigger: ch, start: 'top bottom', end: 'bottom top', scrub: 1 } });
     gsap.to(ch.querySelectorAll('.reveal'), { opacity: 1, y: 0, stagger: 0.15, duration: 1.1, ease: 'power3.out',
       scrollTrigger: { trigger: ch, start: 'top 55%' } });
