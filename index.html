@@ -165,9 +165,12 @@
   .ink { width:1.1em; height:1em; fill:none; stroke:#c2416f; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; overflow:visible; }
   .ink.red { width:.85em; fill:#e0284f; stroke:#8e1534; vertical-align:-.05em; animation:beat 1.4s ease-in-out infinite; }
   @keyframes beat { 15%,45% { transform:scale(1.18); } 30% { transform:scale(.95); } }
-  .fly { position:absolute; top:100%; opacity:0; pointer-events:none; animation:fly linear infinite; }
+  /* each heart rides a full-height column moved with transform only, so the flight never triggers layout */
+  .fly { position:absolute; top:0; bottom:0; opacity:0; pointer-events:none; will-change:transform,opacity; animation:fly linear infinite; }
+  .fly svg { animation:sway 2.6s ease-in-out infinite alternate; }
   .s-letter:not(.live) .fly { animation-play-state:paused; }
-  @keyframes fly { 10% { opacity:.8; } 80% { opacity:.65; } to { top:3%; transform:translateX(var(--dx)) rotate(25deg); opacity:0; } }
+  @keyframes fly { from { transform:translateY(100%); } 10% { opacity:.8; } 80% { opacity:.65; } to { transform:translate(var(--dx),2%); opacity:0; } }
+  @keyframes sway { from { transform:rotate(-12deg); } to { transform:rotate(14deg); } }
 
   .s-final { flex-direction:column; justify-content:center; text-align:center; }
   .s-final h2 { font-family:var(--serif); font-weight:400; font-size:clamp(2.4rem,9vw,5.5rem); line-height:1.05; }
@@ -346,6 +349,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
-<script type="module" src="app.js?v=10"></script>
+<script type="module" src="app.js?v=11"></script>
 </body>
 </html>

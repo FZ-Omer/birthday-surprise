@@ -681,8 +681,11 @@ function bubble() {
     .to(b, { scale: 1.6, opacity: 0, duration: 0.22, ease: 'power2.out' });
 }
 
-function typeLetter() {
+async function typeLetter() {
   const box = $('#letterBody'), text = C.letter;
+  await document.fonts.load('1em Parisienne');
+  box.textContent = text; box.style.minHeight = box.offsetHeight + 'px'; box.textContent = ''; // reserve the final height so the finale doesn't shift while it types
+  ScrollTrigger.refresh();
   let i = 0;
   const t = setInterval(() => {
     box.textContent = text.slice(0, ++i);
