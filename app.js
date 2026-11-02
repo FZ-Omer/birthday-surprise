@@ -616,7 +616,12 @@ function buildStory() {
     </section>`).join('');
   const gallery = C.gallery.length ? C.gallery : C.memories;
   $('#track').innerHTML = gallery.map(m => `<figure class="polaroid">${imgTag(m.src)}<span>${m.title || ''}</span></figure>`).join('');
-  $('#sign').textContent = C.from;
+  // hand-drawn ink hearts drifting up the letter, and a red one beside the signature
+  const heart = cls => `<svg class="${cls}" viewBox="0 0 32 30"><path d="M16 27C6 19 1 13 4 7s10-4 12 2c2-6 9-8 12-2s-2 12-12 20M14.5 24.5C7 18 3.5 12.5 6 8"/></svg>`;
+  $('#sign').textContent = C.from + ' ';
+  $('#sign').insertAdjacentHTML('beforeend', heart('ink red'));
+  $('.paper').insertAdjacentHTML('afterbegin', Array.from({ length: 8 }, (_, i) =>
+    `<i class="fly" style="left:${rand(3, 88)}%;font-size:${rand(18, 32)}px;--dx:${rand(-40, 40)}px;animation-duration:${rand(9, 14)}s;animation-delay:${-i * 1.5}s">${heart('ink')}</i>`).join(''));
   if (C.storyTitle) $('#storyTitle').innerHTML = C.storyTitle;
 
   gsap.from('.s-hero > *', { opacity: 0, y: 40, stagger: 0.25, duration: 1.4, ease: 'power3.out', delay: 0.6 });
@@ -637,6 +642,7 @@ function buildStory() {
     trigger: '.gallery', pin: true, scrub: 1, end: () => '+=' + dist(), invalidateOnRefresh: true } });
 
   ScrollTrigger.create({ trigger: '.s-letter', start: 'top 60%', once: true, onEnter: typeLetter });
+  new IntersectionObserver(([e]) => e.target.classList.toggle('live', e.isIntersecting)).observe($('.s-letter')); // hearts only fly while the letter is on screen
   gsap.from('.paper', { y: 120, rotate: -6, opacity: 0, duration: 1.4, ease: 'power3.out', scrollTrigger: { trigger: '.s-letter', start: 'top 75%' } });
 
   if (C.finale?.src) $('#finalPhoto').src = C.finale.src;
@@ -681,7 +687,7 @@ function typeLetter() {
   const t = setInterval(() => {
     box.textContent = text.slice(0, ++i);
     if (i >= text.length) { clearInterval(t); gsap.to('#sign', { opacity: 1, duration: 1.5 }); }
-  }, 32);
+  }, 45);
 }
 
 // dev shortcut: open index.html#story to jump straight to the story

@@ -7,7 +7,7 @@
 <title>Happy Birthday ✨</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Parisienne&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root { --bg:#05040f; --gold:#f5d68a; --rose:#ff8fab; --text:#f3eaf7; --muted:#b9a9c9;
           --serif:'Cormorant Garamond',serif; --script:'Great Vibes',cursive; --ui:Inter,system-ui,sans-serif; }
@@ -159,8 +159,15 @@
            background:linear-gradient(#fdf8f0,#f4ead9); box-shadow:0 40px 100px #000c; transform:rotate(-1deg); position:relative; }
   .paper::before { content:''; position:absolute; top:-18px; left:50%; width:110px; height:34px; margin-left:-55px;
                    background:#f5d68a99; transform:rotate(2deg); }
-  #letterBody { font-family:var(--serif); font-size:clamp(1.15rem,3.6vw,1.45rem); line-height:1.75; white-space:pre-wrap; min-height:12em; }
+  #letterBody { font-family:Parisienne,cursive; font-size:clamp(1.3rem,4.4vw,1.75rem); line-height:1.8; white-space:pre-wrap; min-height:12em; }
   .sign { font-family:var(--script); font-size:clamp(2rem,7vw,2.8rem); color:#b03a68; margin-top:10px; opacity:0; }
+  #letterBody, .sign { position:relative; }
+  .ink { width:1.1em; height:1em; fill:none; stroke:#c2416f; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; overflow:visible; }
+  .ink.red { width:.85em; fill:#e0284f; stroke:#8e1534; vertical-align:-.05em; animation:beat 1.4s ease-in-out infinite; }
+  @keyframes beat { 15%,45% { transform:scale(1.18); } 30% { transform:scale(.95); } }
+  .fly { position:absolute; top:100%; opacity:0; pointer-events:none; animation:fly linear infinite; }
+  .s-letter:not(.live) .fly { animation-play-state:paused; }
+  @keyframes fly { 10% { opacity:.8; } 80% { opacity:.65; } to { top:3%; transform:translateX(var(--dx)) rotate(25deg); opacity:0; } }
 
   .s-final { flex-direction:column; justify-content:center; text-align:center; }
   .s-final h2 { font-family:var(--serif); font-weight:400; font-size:clamp(2.4rem,9vw,5.5rem); line-height:1.05; }
@@ -339,6 +346,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
-<script type="module" src="app.js?v=7"></script>
+<script type="module" src="app.js?v=10"></script>
 </body>
 </html>
